@@ -1,6 +1,6 @@
 ***
 
-# 🎯 ESP32 Quiz Buzzer System - AI Context & Architecture Guide
+# ESP32 Quiz Buzzer System - Context & Architecture Guide
 
 ## 1. System Overview
 This project is an ESP32-based quiz buzzer system running the Arduino framework. It interfaces with a custom hardware circuit (using 74HC08 and CD4013 logic ICs) that acts as a physical first-press latch. The ESP32 serves an embedded HTML/JS/CSS frontend via `ESPAsyncWebServer` and handles real-time bidirectional communication via WebSockets (`AsyncWebSocket`).
@@ -51,7 +51,7 @@ The browser sends actions to the ESP32 based on button clicks.
 *   **Frontend Storage:** The HTML, CSS, and JS are bundled into a single `PROGMEM` string (`index_html`). This avoids the need for SPIFFS/LittleFS uploads, keeping deployment to a single `.ino` upload.
 *   **String Handling:** Answers are checked case-insensitively using `String.toLowerCase()` and `String.trim()`.
 
-## 6. 🤖 Guidelines for AI Agents Modifying This Code
+## 6. Guidelines for AI Agents Modifying This Code
 If you are an AI tasked with updating this codebase, adhere to the following rules:
 
 1.  **Do Not Block the Loop:** The system uses `ESPAsyncWebServer`. You must never use `delay()` in the `loop()` or in WebSocket handlers (except for the 100ms `resetBuzzer()` pulse, which is acceptable). Use `millis()` for any new timers.
