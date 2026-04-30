@@ -88,6 +88,8 @@ const char index_html[] PROGMEM = R"rawliteral(
     button { padding: 10px 20px; font-size: 1em; border: none; border-radius: 4px; cursor: pointer; transition: 0.3s; margin: 5px; color: white; }
     .btn-start { background: #28a745; }
     .btn-next { background: #17a2b8; }
+    .btn-reset { background: #dc3545; }
+    .btn-reset:hover { background: #c82333; }
     button:disabled { background: #6c757d; cursor: not-allowed; }
     .scoreboard { display: flex; justify-content: space-around; margin-top: 30px; }
     .player-score { background: #f8f9fa; padding: 15px; border-radius: 8px; width: 20%; border: 2px solid transparent; transition: 0.3s; }
@@ -108,6 +110,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 
     <button id="btn-start" class="btn-start" onclick="sendAction('start')">Start Game</button>
     <button id="btn-next" class="btn-next" onclick="sendAction('next')" style="display:none;">Next Question</button>
+    <button id="btn-reset" class="btn-reset" onclick="sendAction('reset')" style="display:none;">Reset Game</button>
 
     <div id="input-group" class="input-group">
       <div id="mcq-options" class="mcq-options">
@@ -169,6 +172,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       let inputGroup = document.getElementById('input-group');
       let btnStart = document.getElementById('btn-start');
       let btnNext = document.getElementById('btn-next');
+      let btnReset = document.getElementById('btn-reset');
       let resultMsg = document.getElementById('result-msg');
 
       if(state > 0 && state < 4) {
@@ -191,6 +195,7 @@ const char index_html[] PROGMEM = R"rawliteral(
         inputGroup.style.display = "none";
         btnNext.style.display = "none";
         btnStart.style.display = "inline-block";
+        btnReset.style.display = "none";
       } 
       else if(state === 1) { // WAITING_FOR_BUZZ
         statusDiv.className = "status waiting";
@@ -198,6 +203,7 @@ const char index_html[] PROGMEM = R"rawliteral(
         inputGroup.style.display = "none";
         btnNext.style.display = "none";
         resultMsg.innerText = "";
+        btnReset.style.display = "inline-block";
       }
       else if(state === 2) { // ANSWERING
         statusDiv.className = "status buzzed";
@@ -206,6 +212,7 @@ const char index_html[] PROGMEM = R"rawliteral(
         inputGroup.style.display = "block";
         document.getElementById('mcq-options').style.display = "flex";
         btnNext.style.display = "none";
+        btnReset.style.display = "inline-block";
       }
       else if(state === 3) { // ROUND_OVER
         statusDiv.className = "status over";
@@ -214,6 +221,7 @@ const char index_html[] PROGMEM = R"rawliteral(
         resultMsg.innerHTML = data.resultMsg;
         inputGroup.style.display = "block"; 
         document.getElementById('mcq-options').style.display = "none";
+        btnReset.style.display = "inline-block";
       }
       else if(state === 4) { // GAME_OVER
         statusDiv.className = "status over";
@@ -223,6 +231,7 @@ const char index_html[] PROGMEM = R"rawliteral(
         btnNext.style.display = "none";
         btnStart.style.display = "inline-block";
         btnStart.innerText = "Play Again";
+        btnReset.style.display = "none";
       }
     }
   </script>
@@ -290,6 +299,16 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
       currentState = WAITING_FOR_BUZZ;
       broadcastState();
     } 
+    else if (action == "reset") {
+      // Reset game to not started
+      for(int i=0; i<4; i++) scores[i] = 0;
+      currentQuestionIdx = 0;
+      activePlayer = -1;
+      lastResult = "";
+      resetBuzzer();
+      currentState = NOT_STARTED;
+      broadcastState();
+    }
     else if (action == "submit" && currentState == ANSWERING) {
       int submittedOption = doc["answer"];
       int correctOption = quiz[currentQuestionIdx].correctOption;
