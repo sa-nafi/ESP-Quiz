@@ -45,8 +45,15 @@ The ESP32 pushes game state updates whenever a transition occurs.
   "state": 2,
   "qIdx": 0,
   "qText": "What is 8 + 5?",
+  "qOptions": [
+    "11",
+    "12",
+    "13",
+    "14"
+  ],
   "activePlayer": 1,
   "resultMsg": "...",
+  "isLast": false,
   "scores": [0, 1, 0, 0]
 }
 ```

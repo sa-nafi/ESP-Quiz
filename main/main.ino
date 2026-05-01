@@ -5,6 +5,7 @@
 #include <ArduinoJson.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include "secrets.h"
 
 // Initialize the LCD display (I2C address 0x27, 16 columns, 2 rows)
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -22,8 +23,8 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 // ==========================================
 // WIFI & SERVER SETUP
 // ==========================================
-const char* ssid = "Patriot";
-const char* password = "67932108";
+const char* ssid = SSID;
+const char* password = PASS;
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
