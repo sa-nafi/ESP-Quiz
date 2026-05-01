@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP Quiz</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="sketch-box">
+            <h1>ESP Quiz</h1>
+        </div>
+        <div id="q-container" class="sketch-box" style="display:none;">
+            Question <span id="q-num">1</span>:<br><span id="q-text">Loading...</span>
+        </div>
+        <div id="status-bar" class="status-msg waiting">Waiting to start...</div>
+        <div class="sketch-box action-box">
+            <button id="btn-start" class="btn-start" onclick="sendAction('start')">Start Game</button>
+            <button id="btn-next" class="btn-next" onclick="sendAction('next')" style="display:none;">Next
+                Question</button>
+            <button id="btn-reset" class="btn-reset" onclick="confirmReset()" style="display:none;">Reset</button>
+        </div>
+        <div id="input-group" class="input-group sketch-box">
+            <div id="mcq-options">
+                <button class="mcq-btn" onclick="submitAnswer(0)" id="opt0">Option 1</button>
+                <button class="mcq-btn" onclick="submitAnswer(1)" id="opt1">Option 2</button>
+                <button class="mcq-btn" onclick="submitAnswer(2)" id="opt2">Option 3</button>
+                <button class="mcq-btn" onclick="submitAnswer(3)" id="opt3">Option 4</button>
+            </div>
+            <div id="result-msg"></div>
+        </div>
+        <div class="sketch-box">
+            <div style="font-size: 0.9rem; margin-bottom: 10px; text-decoration: underline;">SCOREBOARD</div>
+            <div class="scoreboard">
+                <div id="p1-card" class="score-card"><span class="score-label">P1</span><span id="s1"
+                        class="score-value">0</span></div>
+                <div id="p2-card" class="score-card"><span class="score-label">P2</span><span id="s2"
+                        class="score-value">0</span></div>
+                <div id="p3-card" class="score-card"><span class="score-label">P3</span><span id="s3"
+                        class="score-value">0</span></div>
+                <div id="p4-card" class="score-card"><span class="score-label">P4</span><span id="s4"
+                        class="score-value">0</span></div>
+            </div>
+        </div>
+    </div>
+    <script src="/script.js"></script>
+</body>
+
+</html>
