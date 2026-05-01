@@ -10,7 +10,7 @@
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // ==========================================
-// ⚙️ HARDWARE PIN DEFINITIONS
+// HARDWARE PIN DEFINITIONS
 // ==========================================
 #define P1_PIN 34
 #define P2_PIN 35
@@ -20,7 +20,7 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 #define GAME_RESET_PIN 26
 
 // ==========================================
-// 🌐 WIFI & SERVER SETUP
+// WIFI & SERVER SETUP
 // ==========================================
 const char* ssid = "Patriot";
 const char* password = "67932108";
@@ -29,7 +29,7 @@ AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
 // ==========================================
-// 🧠 QUIZ LOGIC & STATE MANAGEMENT
+// QUIZ LOGIC & STATE MANAGEMENT
 // ==========================================
 enum GameState {
   NOT_STARTED = 0,
@@ -68,7 +68,7 @@ int scores[4] = {0, 0, 0, 0};
 String lastResult = "";
 
 // ==========================================
-// 🛠️ HELPER FUNCTIONS
+// HELPER FUNCTIONS
 // ==========================================
 
 // Pulses the hardware reset pin for the CD4013 latches
@@ -110,7 +110,7 @@ void broadcastState() {
 }
 
 // ==========================================
-// 📡 WEBSOCKET HANDLER
+// WEBSOCKET HANDLER
 // ==========================================
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
@@ -184,7 +184,7 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
 }
 
 // ==========================================
-// 🚀 ARDUINO SETUP
+// ARDUINO SETUP
 // ==========================================
 void setup() {
   Serial.begin(115200);
@@ -255,7 +255,7 @@ void setup() {
 }
 
 // ==========================================
-// 🔄 ARDUINO MAIN LOOP
+// ARDUINO MAIN LOOP
 // ==========================================
 void loop() {
   // Keep WebSocket clients clean

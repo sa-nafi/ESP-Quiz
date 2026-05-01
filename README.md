@@ -1,64 +1,80 @@
-***
+# ESP Quiz
 
-# ESP32 Quiz Buzzer System - Context & Architecture Guide
+## Overview
+The ESP Quiz is an interactive, real-time quiz game platform built on the Arduino framework. It combines custom hardware logic (74HC08 and CD4013 ICs) for zero-latency, first-press buzzer detection with a responsive web frontend served directly from the ESP32. Bidirectional communication between the hardware and the user interface is handled via WebSockets, ensuring seamless state synchronization without page reloads.
 
-## 1. System Overview
-This project is an ESP32-based quiz buzzer system running the Arduino framework. It interfaces with a custom hardware circuit (using 74HC08 and CD4013 logic ICs) that acts as a physical first-press latch. The ESP32 serves an embedded HTML/JS/CSS frontend via `ESPAsyncWebServer` and handles real-time bidirectional communication via WebSockets (`AsyncWebSocket`).
+## Features
+- **Hardware-Level Latching**: Utilizes external logic gates for immediate buzzer detection without the need for software debouncing.
+- **Real-Time Web Interface**: Embedded HTML/JS/CSS frontend served from LittleFS using `ESPAsyncWebServer`.
+- **WebSocket Protocol**: Fast, bidirectional JSON messaging using `AsyncWebSocket` and `ArduinoJson`.
+- **State Machine Architecture**: Robust, strict state management ensuring orderly game progression.
+- **I2C LCD Integration**: Displays network connection status and the local IP address for easy discovery of the web portal.
 
-## 2. Hardware Abstraction & Pin Mapping
-The hardware logic gates handle debouncing and first-press latching. Therefore, the ESP32 software **does not** need software debouncing. It simply polls the pins, registers the first HIGH signal, and immediately locks state.
+## Hardware Configuration
 
-*   **Player 1 Input:** GPIO 34
-*   **Player 2 Input:** GPIO 35
-*   **Player 3 Input:** GPIO 32
-*   **Player 4 Input:** GPIO 33
-    *   *Logic:* Active HIGH (3.3V) from external CD4013 latches.
-*   **Hardware Reset:** GPIO 25
-    *   *Logic:* A 100ms HIGH pulse resets the external CD4013 latches. Triggered via the `resetBuzzer()` function.
+### Pin Mapping
+- **Player Inputs (Active HIGH from CD4013 latches)**:
+  - Player 1: GPIO 34
+  - Player 2: GPIO 35
+  - Player 3: GPIO 32
+  - Player 4: GPIO 33
+- **Control Pins**:
+  - Hardware Reset: GPIO 25 (Sends a 100ms HIGH pulse to reset external latches)
+  - Game Reset: GPIO 26 (Physical button to reset the system state, Active LOW)
+- **I2C LCD Display**:
+  - SDA: GPIO 21
+  - SCL: GPIO 22
 
-## 3. Core State Machine (`GameState`)
-The system is strictly governed by an `enum GameState`. **Any future AI modifying this code MUST adhere to these state transitions.**
+## System Architecture
 
-*   `0 | NOT_STARTED`: Initial boot state. UI shows "Start Game" button.
-*   `1 | WAITING_FOR_BUZZ`: ESP32 actively polls GPIOs 32-35 in `loop()`. UI hides inputs.
-*   `2 | ANSWERING`: A player has buzzed. **Hardware polling stops.** UI shows answer input field to the active player.
-*   `3 | ROUND_OVER`: Answer submitted. UI displays correct/incorrect result and "Next Question" button.
-*   `4 | GAME_OVER`: All questions exhausted. UI shows final scores and "Play Again" button.
+### Core State Machine (`GameState`)
+The game flow is controlled by an explicit state machine. All logic and frontend updates must adhere to these states:
+- `NOT_STARTED (0)`: Initial state. UI displays the "Start Game" button.
+- `WAITING_FOR_BUZZ (1)`: ESP32 polls hardware inputs. UI hides active inputs.
+- `ANSWERING (2)`: A player has buzzed in. Hardware polling is paused. UI presents the answer field to the active player.
+- `ROUND_OVER (3)`: Answer submitted. UI displays the result and prompts for the next question.
+- `GAME_OVER (4)`: All questions completed. UI shows final scores and prompts to restart.
 
-## 4. WebSocket Communication Protocol
-Communication is entirely real-time JSON over WebSockets (port 80, path `/ws`). AJAX is **not** used. The `ArduinoJson` library handles serialization/deserialization.
+### Communication Protocol
+The system uses JSON over WebSockets (`/ws`) for all client-server communication.
 
-### Server -> Client (State Broadcasts)
-The ESP32 pushes the entire game state to the browser via `broadcastState()` whenever a state changes.
+**Server to Client Broadcasts:**
+The ESP32 pushes game state updates whenever a transition occurs.
 ```json
 {
-  "state": 2,                 // Matches GameState enum
-  "qIdx": 0,                  // Current question index
-  "qText": "What is 8 + 5?",  // Current question string
-  "activePlayer": 1,          // 1-4 (or -1 if none)
-  "resultMsg": "...",         // HTML string of the last answer result
-  "scores": [0, 1, 0, 0]      // Array of scores for P1, P2, P3, P4
+  "state": 2,
+  "qIdx": 0,
+  "qText": "What is 8 + 5?",
+  "activePlayer": 1,
+  "resultMsg": "...",
+  "scores": [0, 1, 0, 0]
 }
 ```
 
-### Client -> Server (Action Requests)
-The browser sends actions to the ESP32 based on button clicks.
-*   **Start/Restart:** `{"action": "start"}`
-*   **Submit Answer:** `{"action": "submit", "answer": "User Typed String"}`
-*   **Next Question:** `{"action": "next"}`
+**Client to Server Actions:**
+The frontend sends action commands based on user interaction.
+- Start/Restart: `{"action": "start"}`
+- Submit Answer: `{"action": "submit", "answer": 2}`
+- Next Question: `{"action": "next"}`
+- Reset Game: `{"action": "reset"}`
 
-## 5. File Structure & Memory Management
-*   **Frontend Storage:** The HTML, CSS, and JS are bundled into a single `PROGMEM` string (`index_html`). This avoids the need for SPIFFS/LittleFS uploads, keeping deployment to a single `.ino` upload.
-*   **String Handling:** Answers are checked case-insensitively using `String.toLowerCase()` and `String.trim()`.
+## Modification and Contribution Guide
 
-## 6. Guidelines for AI Agents Modifying This Code
-If you are an AI tasked with updating this codebase, adhere to the following rules:
+### Modifying the Frontend
+The HTML, CSS, and JS files are stored in the LittleFS filesystem (located in the `data/` directory).
+- To update the frontend, edit the respective files in `data/`.
+- Ensure you upload the LittleFS filesystem image to the ESP32 after making changes to these files (e.g., using the ESP32 Sketch Data Upload tool).
+- The `updateUI(data)` JavaScript function must be updated if new states or payload variables are introduced.
 
-1.  **Do Not Block the Loop:** The system uses `ESPAsyncWebServer`. You must never use `delay()` in the `loop()` or in WebSocket handlers (except for the 100ms `resetBuzzer()` pulse, which is acceptable). Use `millis()` for any new timers.
-2.  **Frontend Updates:** If modifying the UI, edit the `index_html` raw literal string. You must update the `updateUI(data)` JavaScript function if you add new states or variables.
-3.  **Adding a Timer (Common Feature Request):**
-    *   If tasked with adding a countdown timer, implement the countdown logic in the JavaScript frontend to save ESP32 processing power.
-    *   Only use the ESP32 to enforce a timeout (e.g., storing a `millis()` timestamp when state enters `ANSWERING`).
-4.  **Adding Audio (Common Feature Request):**
-    *   If adding a buzzer sound, trigger it immediately inside the `WAITING_FOR_BUZZ` block in the `loop()` exactly when a GPIO goes HIGH, before calling `broadcastState()`. Use a non-blocking `tone()` or a simple digital HIGH to an active buzzer pin.
-5.  **Question Data Structure:** Questions are stored in a simple `struct Question` array. If adding many questions, consider moving this to a separate `.h` file or formatting it in JSON within SPIFFS if memory limits are reached. Currently, it resides in RAM.
+### Developing the Firmware
+- **Non-blocking Code**: The system relies on asynchronous web servers and WebSockets. Never use `delay()` in the `loop()` or in WebSocket handlers. Use `millis()` for any time-based logic.
+- **Hardware Abstraction**: Do not add software debouncing for the buzzers. The external CD4013 ICs handle this natively.
+- **Quiz Data**: Questions are stored in a `Question` struct array in memory. If adding a large dataset, consider migrating this structure to LittleFS or PROGMEM to conserve RAM.
+- **Display Additions**: The I2C LCD is initialized via the `LiquidCrystal_I2C` library. Changes to the display logic should occur in `setup()` or state transition blocks to avoid unnecessary I2C traffic in the main loop.
+
+## Setup and Installation
+1. Install the required Arduino libraries: `ESPAsyncWebServer`, `AsyncTCP`, `ArduinoJson`, and `LiquidCrystal_I2C`.
+2. Configure your WiFi credentials (`ssid` and `password`) in `main/main.ino`.
+3. Use the Arduino IDE to upload the LittleFS data folder to the ESP32 (using the [LittleFS Upload Tool](https://github.com/earlephilhower/arduino-littlefs-upload)).
+4. Compile and upload the sketch to the ESP32.
+5. Check the I2C LCD for the assigned IP address, and navigate to it in a web browser to start the game.
