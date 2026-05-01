@@ -3,6 +3,11 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// Initialize the LCD display (I2C address 0x27, 16 columns, 2 rows)
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // ==========================================
 // ⚙️ HARDWARE PIN DEFINITIONS
@@ -183,6 +188,16 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
 // ==========================================
 void setup() {
   Serial.begin(115200);
+  delay(1000); // Give Serial monitor time to initialize
+
+  // Explicitly start I2C (SDA=21, SCL=22 for most ESP32s) to prevent pin conflicts
+  Wire.begin();
+
+  // Initialize LCD
+  lcd.init();
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("WiFi: Disconnect");
 
   // Initialize Pins
   pinMode(P1_PIN, INPUT); // CD4013 provides hard HIGH/LOW, no pullup needed
@@ -209,6 +224,13 @@ void setup() {
   }
   Serial.println("\nConnected! IP Address: ");
   Serial.println(WiFi.localIP());
+
+  // Update LCD with connected status and IP
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("WiFi: Connected");
+  lcd.setCursor(0, 1);
+  lcd.print(WiFi.localIP().toString());
 
   // Web Server Routes
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
