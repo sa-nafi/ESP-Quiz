@@ -75,7 +75,7 @@ String lastResult = "";
 // Pulses the hardware reset pin for the CD4013 latches
 void resetBuzzer() {
   digitalWrite(RESET_PIN, HIGH);
-  delay(100);
+  delay(1);
   digitalWrite(RESET_PIN, LOW);
 }
 
@@ -154,6 +154,8 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
         lastResult = "<span style='color:red;'>Incorrect. The correct answer was " + correctAnswerStr + "</span>";
       }
       
+      resetBuzzer();
+
       currentState = ROUND_OVER;
       broadcastState();
     }
@@ -164,7 +166,6 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
       } else {
         activePlayer = -1;
         lastResult = "";
-        resetBuzzer();
         currentState = WAITING_FOR_BUZZ;
       }
       broadcastState();
