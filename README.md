@@ -9,6 +9,8 @@ The ESP Quiz is an interactive, real-time quiz game platform built on the Arduin
 - **WebSocket Protocol**: Fast, bidirectional JSON messaging using `AsyncWebSocket` and `ArduinoJson`.
 - **State Machine Architecture**: Robust, strict state management ensuring orderly game progression.
 - **I2C LCD Integration**: Displays network connection status and the local IP address for easy discovery of the web portal.
+- **AI Question Generation**: Dynamically generate new quiz questions on any topic directly from the web app using the OpenRouter AI API.
+- **Secure Credentials Management**: WiFi credentials and API keys are stored securely in a `secrets.h` file and injected safely by the backend.
 
 ## Hardware Configuration
 
@@ -64,6 +66,8 @@ The frontend sends action commands based on user interaction.
 - Submit Answer: `{"action": "submit", "answer": 2}`
 - Next Question: `{"action": "next"}`
 - Reset Game: `{"action": "reset"}`
+- Update Single Question: `{"action": "update_question", "index": 0, "question": {"text": "...", "options": ["..."], "correctOption": 1}}`
+- Apply New Questions: `{"action": "questions_updated"}`
 
 ## Modification and Contribution Guide
 
@@ -76,12 +80,12 @@ The HTML, CSS, and JS files are stored in the LittleFS filesystem (located in th
 ### Developing the Firmware
 - **Non-blocking Code**: The system relies on asynchronous web servers and WebSockets. Never use `delay()` in the `loop()` or in WebSocket handlers. Use `millis()` for any time-based logic.
 - **Hardware Abstraction**: Do not add software debouncing for the buzzers. The external CD4013 ICs handle this natively.
-- **Quiz Data**: Questions are stored in a `Question` struct array in memory. If adding a large dataset, consider migrating this structure to LittleFS or PROGMEM to conserve RAM.
+- **Quiz Data**: Questions are stored in a `Question` struct array in memory. When generating AI questions, the frontend streams them to the ESP32 one-by-one over WebSockets to prevent buffer fragmentation and memory exhaustion.
 - **Display Additions**: The I2C LCD is initialized via the `LiquidCrystal_I2C` library. Changes to the display logic should occur in `setup()` or state transition blocks to avoid unnecessary I2C traffic in the main loop.
 
 ## Setup and Installation
 1. Install the required Arduino libraries: `ESPAsyncWebServer`, `AsyncTCP`, `ArduinoJson`, and `LiquidCrystal_I2C`.
-2. Configure your WiFi credentials (`ssid` and `password`) in `main/main.ino`.
+2. Rename `main/secrets.h.example` to `main/secrets.h` and configure your WiFi credentials (`SSID`, `PASS`) and your OpenRouter API key (`OPENROUTER_API_KEY`).
 3. Use the Arduino IDE to upload the LittleFS data folder to the ESP32 (using the [LittleFS Upload Tool](https://github.com/earlephilhower/arduino-littlefs-upload)).
 4. Compile and upload the sketch to the ESP32.
 5. Check the I2C LCD for the assigned IP address, and navigate to it in a web browser to start the game.
