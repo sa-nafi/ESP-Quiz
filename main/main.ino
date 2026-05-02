@@ -116,13 +116,38 @@ void broadcastState() {
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
-    StaticJsonDocument<256> doc;
+    DynamicJsonDocument doc(512);
     DeserializationError err = deserializeJson(doc, (const char*)data, len);
-    if (err) return;
+    if (err) {
+      Serial.print(F("deserializeJson() failed with code "));
+      Serial.println(err.f_str());
+      return;
+    }
 
     String action = doc["action"];
 
-    if (action == "start") {
+    if (action == "update_question") {
+      int idx = doc["index"];
+      if (idx >= 0 && idx < totalQuestions) {
+        quiz[idx].text = doc["question"]["text"].as<String>();
+        quiz[idx].options[0] = doc["question"]["options"][0].as<String>();
+        quiz[idx].options[1] = doc["question"]["options"][1].as<String>();
+        quiz[idx].options[2] = doc["question"]["options"][2].as<String>();
+        quiz[idx].options[3] = doc["question"]["options"][3].as<String>();
+        quiz[idx].correctOption = doc["question"]["correctOption"].as<int>();
+      }
+    }
+    else if (action == "questions_updated") {
+      // Reset game state after updating questions
+      for(int i=0; i<4; i++) scores[i] = 0;
+      currentQuestionIdx = 0;
+      activePlayer = -1;
+      lastResult = "";
+      resetBuzzer();
+      currentState = NOT_STARTED;
+      broadcastState();
+    }
+    else if (action == "start") {
       // Reset game parameters
       for(int i=0; i<4; i++) scores[i] = 0;
       currentQuestionIdx = 0;
@@ -245,6 +270,10 @@ void setup() {
   
   server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(LittleFS, "/script.js", "application/javascript");
+  });
+
+  server.on("/api_key", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/plain", OPENROUTER_API_KEY);
   });
 
   // Attach WebSocket
